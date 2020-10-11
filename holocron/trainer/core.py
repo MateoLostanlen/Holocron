@@ -5,6 +5,9 @@ import torch
 from torch.optim.lr_scheduler import OneCycleLR, CosineAnnealingLR, MultiplicativeLR
 from torchvision.ops.boxes import box_iou
 from fastprogress import master_bar, progress_bar
+from torchvision.utils import make_grid
+from torchvision import transforms
+import numpy as np
 
 from contiguous_params import ContiguousParams
 
@@ -285,6 +288,35 @@ class Trainer:
             prev_loss = batch_loss.item()
 
         return True
+
+    def showBatch(self, nb_images=None, nb_row=4, fig_size_X=15, fig_size_Y=15):
+        """Display a batch in train loader
+
+        Args:
+            nb_images (int): number of images to display, full batch by default
+            nb_row (int): number of images per rows
+            fig_size_X (int): figure size X
+            fig_size_Y (int): figure size Y
+        """
+
+        x, target = next(iter(self.train_loader))
+
+        if(nb_images):
+            x = x[:nb_images, :, :, :]
+            target = target[:nb_images]
+        print(target)
+        images = make_grid(x, nrow=nb_row)  # the default nrow is 8
+
+        # Inverse normalize the images
+        inv_normalize = transforms.Normalize(
+            mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225],
+            std=[1/0.229, 1/0.224, 1/0.225]
+        )
+        im_inv = inv_normalize(images)
+
+        # Print the images
+        plt.figure(figsize=(fig_size_X, fig_size_Y))
+        plt.imshow(np.transpose(im_inv.numpy(), (1, 2, 0)))
 
 
 class ClassificationTrainer(Trainer):
